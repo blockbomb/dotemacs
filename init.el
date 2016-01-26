@@ -1,5 +1,11 @@
-;;package managment
+;;; init.el --- My Customization File for the EMACS experience
+;;; Commentary:
+;;; Change Log:
+;;; Code:
+
+;; Package managment
 (require 'package)
+(package-initialize)
 (add-to-list 'package-archives
 	     '("mepla" . "http://melpa.org/packages/"))
 (when (< emacs-major-version 24)
@@ -7,13 +13,61 @@
 	       '("gnu" . "http://epla.gnu.org/packages/")))
 ;(setq url-proxy-services '(("http" . "usncwsa.diebold.com:8080")
 ;			   ("https" . "usncwsa.diebold.com:8080")))
-(package-initialize)
+
+;; Auto load packages thatnn are missing
+(defvar autoload-packages
+  '(autopair
+    auto-complete
+    yasnippet        ; snippet generator
+    org-journal      ; org-mode alteration for notes
+    evil             ; vim emulation layer for emacs
+    dts-mode        ; device tree syntax 
+    flycheck         ; on the fly syntax extension checking
+    mellow-theme
+    )
+  "A list of packages to ensure are installed at launch.")
+
+(defun autoload-packages-installed-p ()
+  (cl-loop for p in autoload-packages
+	   when (not (package-installed-p p)) do (cl-return nil)
+	   finally (cl-return t)))
+
+(unless (autoload-packages-installed-p)
+  ;; check for new packages (package versions)
+  (message "%s" "Emacs is now refreshing its package database...")
+  (package-refresh-contents)
+  (message "%s" " done.")
+  ;; install the missing packages
+  (dolist (p autoload-packages)
+    (when (not (package-installed-p p))
+      (package-install p))))
+(provide 'autoload-package)
+
+;; User packages
+(add-to-list 'load-path "~/.emacs.d/elisp")
 
 ;; General Editing 
 (require 'dts-mode)
 (require 'autopair)
+(require 'auto-complete-config)
+(require 'yasnippet)
+(require 'hideshow)
+
 (autopair-global-mode 1)
 (setq autopair-autowrap 1)
+(ac-config-default)
+(yas-global-mode 1)
+(global-flycheck-mode)
+
+(define-key global-map "\C-\M-o" 'hs-toggle-hiding)
+(define-key global-map "\C-\\" 'hs-oggle-selective-display)
+(add-hook 'c-mode-common-hook   'hs-minor-mode)
+(add-hook 'emacs-lisp-mode-hook 'hs-minor-mode)
+(add-hook 'java-mode-hook       'hs-minor-mode)
+(add-hook 'perl-mode-hook       'hs-minor-mode)
+(add-hook 'sh-mode-hook         'hs-minor-mode)
+(add-hook 'python-mode-hook     'hs-minor-mode)
+
 
 ;; C-Programming Section
 (setq-default c-basic-offset 4
@@ -54,3 +108,4 @@
  ;; If there is more than one, they won't work right.
  )
 
+;;; init.el ends here
