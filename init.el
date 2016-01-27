@@ -48,17 +48,19 @@
 
 ;; General Editing 
 (require 'dts-mode)
-(require 'autopair)
-(require 'auto-complete-config)
-(require 'yasnippet)
-(require 'hideshow)
 
+(require 'autopair)
 (autopair-global-mode 1)
 (setq autopair-autowrap 1)
+
+(require 'auto-complete-config)
 (ac-config-default)
+
+(require 'yasnippet)
 (yas-global-mode 1)
 (global-flycheck-mode)
 
+(require 'hideshow)
 (define-key global-map "\C-\M-o" 'hs-toggle-hiding)
 (define-key global-map "\C-\\" 'hs-oggle-selective-display)
 (add-hook 'c-mode-common-hook   'hs-minor-mode)
@@ -68,6 +70,17 @@
 (add-hook 'sh-mode-hook         'hs-minor-mode)
 (add-hook 'python-mode-hook     'hs-minor-mode)
 
+(require 'sgml-mode)
+(require 'nxml-mode)
+(add-to-list 'hs-special-modes-alist
+	     '(nxml-mode
+	       "<!--\\|<[^/>]*[^/]>"
+	       "-->\\|</[^/>]*[^/]>"
+
+	       "<!--"
+	       sgml-skip-tag-forward
+	       nil))
+(add-hook 'nxml-mode-hook 'hs-minor-mode)
 
 ;; C-Programming Section
 (setq-default c-basic-offset 4
@@ -94,10 +107,10 @@
  ;; If there is more than one, they won't work right.
  '(ansi-color-names-vector
    ["#2e3436" "#a40000" "#4e9a06" "#c4a000" "#204a87" "#5c3566" "#729fcf" "#eeeeec"])
- '(custom-enabled-themes (quote (leuven)))
+ '(custom-enabled-themes (quote (deeper-blue)))
  '(custom-safe-themes
    (quote
-    ("fc0c179ce77997ecb6a7833310587131f319006ef2f630c5a1fec1a9307bff45" default)))
+    ("28ec8ccf6190f6a73812df9bc91df54ce1d6132f18b4c8fcc85d45298569eb53" "38ba6a938d67a452aeb1dada9d7cdeca4d9f18114e9fc8ed2b972573138d4664" "fc0c179ce77997ecb6a7833310587131f319006ef2f630c5a1fec1a9307bff45" default)))
  '(org-agenda-files
    (quote
     ("/home/blockb/org/work.org" "/home/blockb/org/journal/20150529" "/home/blockb/org/journal/20150605" "/home/blockb/org/journal/20150606" "/home/blockb/org/journal/20150609" "/home/blockb/org/journal/20150610" "/home/blockb/org/journal/20151020" "/home/blockb/org/journal/20151125" "/home/blockb/org/journal/20160104" "/home/blockb/org/journal/20160111" "/home/blockb/org/journal/20160112" "/home/blockb/org/journal/20160119" "/home/blockb/org/journal/20160120" "/home/blockb/org/journal/20160122"))))
