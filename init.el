@@ -133,8 +133,8 @@
 (define-key global-map "\C-ca" 'org-agenda)
 (setq org-agenda-include-diary t)
 (setq org-log-done t)
-(add-to-list 'auto-mode-alist '("\\.org\\'" . org-journal-mode))
-(add-to-list 'auto-mode-alist '("[0-9]+" . org-journal-mode))
+(add-to-list 'auto-mode-alist '(".+\.org$" . org-journal-mode))
+(add-to-list 'auto-mode-alist '("[0-9]+$" . org-journal-mode))
 
 
 (custom-set-variables
@@ -147,10 +147,7 @@
  '(custom-enabled-themes (quote (deeper-blue)))
  '(custom-safe-themes
    (quote
-    ("28ec8ccf6190f6a73812df9bc91df54ce1d6132f18b4c8fcc85d45298569eb53" "38ba6a938d67a452aeb1dada9d7cdeca4d9f18114e9fc8ed2b972573138d4664" "fc0c179ce77997ecb6a7833310587131f319006ef2f630c5a1fec1a9307bff45" default)))
- '(org-agenda-files
-   (quote
-    ("/home/blockb/org/work.org" "/home/blockb/org/journal/20150529" "/home/blockb/org/journal/20150605" "/home/blockb/org/journal/20150606" "/home/blockb/org/journal/20150609" "/home/blockb/org/journal/20150610" "/home/blockb/org/journal/20151020" "/home/blockb/org/journal/20151125" "/home/blockb/org/journal/20160104" "/home/blockb/org/journal/20160111" "/home/blockb/org/journal/20160112" "/home/blockb/org/journal/20160119" "/home/blockb/org/journal/20160120" "/home/blockb/org/journal/20160122"))))
+    ("28ec8ccf6190f6a73812df9bc91df54ce1d6132f18b4c8fcc85d45298569eb53" "38ba6a938d67a452aeb1dada9d7cdeca4d9f18114e9fc8ed2b972573138d4664" "fc0c179ce77997ecb6a7833310587131f319006ef2f630c5a1fec1a9307bff45" default))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
