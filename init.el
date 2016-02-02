@@ -24,6 +24,7 @@
     dts-mode        ; device tree syntax 
     flycheck         ; on the fly syntax extension checking
     mellow-theme
+    magit
     )
   "A list of packages to ensure are installed at launch.")
 
