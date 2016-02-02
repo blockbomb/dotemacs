@@ -63,7 +63,7 @@
 
 (require 'hideshow)
 (define-key global-map "\C-\M-o" 'hs-toggle-hiding)
-(define-key global-map "\C-\\" 'hs-oggle-selective-display)
+(define-key global-map "\C-\\" 'hs-toggle-selective-display)
 (add-hook 'c-mode-common-hook   'hs-minor-mode)
 (add-hook 'emacs-lisp-mode-hook 'hs-minor-mode)
 (add-hook 'java-mode-hook       'hs-minor-mode)
