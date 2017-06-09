@@ -32,6 +32,11 @@
     json-mode			; editing mode for json files
     org-bullets			; prettier org mode headings
     auctex
+    ghc
+    haskell-mode
+    web-mode
+    solidity-mode
+    flymake-solidity
     )
   "A list of packages to ensure are installed at launch.")
 
@@ -165,7 +170,50 @@
 (setq-default TeX-master nil)
 (setq org-latex-create-formula-image-program 'dvipng)
 
+;; haskell setup
+(autoload 'ghc-init "ghc" nil t)
+(autoload 'ghc-debug "ghc" nil t)
+(add-hook 'haskell-mode-hook (lambda () (ghc-init)))
 
+
+;; micropython/mqtt
+(define-key global-map "\C-xp" (lambda () (interactive)
+                                 (start-process "my-process" "test" "mosquitto_sub" "-h"
+                                                (read-string "Host:") "-t" (read-string "Topic:"))))
+(defun upload (buff-name remote-dir)
+  "Upload BUFF-NAME to the REMOTE-DIR esp8266."
+  (interactive (list (read-string (format "Buffer to send [%s]: " (buffer-name)) (buffer-name))
+                     (read-string "Remote Dir: " "/")))
+  (let ((file (buffer-file-name (get-buffer buff-name))))
+    (if (get-process "ftp")
+        (kill-process (get-process "ftp")))
+    (let (
+          (p (start-process "ftp" "*ftp transfer*" "ftp" "-n" "192.168.1.100"))
+          (done 'false))
+      (set-process-filter p (lambda (proc str)
+                              (if (string-match "Done." str)
+                                  (setq done 'true))))
+      (process-send-string p (format "put %s /%s\n"
+                                           file
+                                           (concat remote-dir (file-name-nondirectory file))))
+      (while (eq done 'false)
+        (accept-process-output p 5 0 0))
+      (process-send-string p "quit\n")
+      )))
+
+;; web-mode setup
+(require 'web-mode)
+(setq create-lockfiles nil)
+(setq-default indent-tabs-mode nil)
+
+;; ethereum stuff
+(setq solidity-solc-path "/usr/bin/solcjs")
+(require 'solidity-mode)
+(require 'flymake-solidity)
+
+
+
+(define-key function-key-map (kbd "C-<f10>") (kbd "<f10>"))
 
 (desktop-save-mode 1)
 
@@ -178,6 +226,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(LaTeX-verbatim-environments (quote ("verbatim" "verbatim*" "lstlisting")))
  '(ansi-color-names-vector
    ["#2e3436" "#a40000" "#4e9a06" "#c4a000" "#204a87" "#5c3566" "#729fcf" "#eeeeec"])
  '(custom-enabled-themes (quote (tango-dark)))
