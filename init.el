@@ -11,8 +11,8 @@
 (when (< emacs-major-version 24)
   (add-to-list 'package-archives
 	       '("gnu" . "http://epla.gnu.org/packages/")))
-;;(setq url-proxy-services '(("http" . "usncwsa.diebold.com:8080")
-;;			   ("https" . "usncwsa.diebold.com:8080")))
+(setq url-proxy-services '(("http" . "usncwsa.diebold.com:8080")
+			   ("https" . "usncwsa.diebold.com:8080")))
 
 ;; Auto load packages thatnn are missing
 (defvar autoload-packages
@@ -27,7 +27,6 @@
     magit			; Amazing git wrapper for emacs
     python-mode
     jedi			; python editor helper
-    relative-line-numbers	; linenumbers are relative to point
     cython-mode			; editing mode for cython files
     json-mode			; editing mode for json files
     org-bullets			; prettier org mode headings
@@ -37,6 +36,9 @@
     web-mode
     solidity-mode
     flymake-solidity
+    go-mode
+    tide
+    company
     )
   "A list of packages to ensure are installed at launch.")
 
@@ -151,8 +153,10 @@
 ;; Notes N' dat
 (require 'org)
 (setq org-journal-dir "~/org/journal")
-(setq org-agenda-file-regexp "^.*\.org$\\|[0-9]+$")
+(setq org-agenda-file-regexp "\\`.*\\.org\\'\\|\\`[0-9]+\\'")
 (setq org-agenda-files '("~/org" "~/org/journal"))
+(setq org-journal-file-format "%Y%m%d.org")
+
 (require 'org-journal)
 (define-key global-map "\C-cl" 'org-store-link)
 (define-key global-map "\C-ca" 'org-agenda)
@@ -162,6 +166,27 @@
 (add-to-list 'auto-mode-alist '("[0-9]+$" . org-journal-mode))
 (require 'org-bullets)
 (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
+
+(require 'ox-publish)
+(setq org-publish-project-alist
+      '(
+        ("org-notes"
+         :base-directory "~/org"
+         :base-extension "org"
+         :publishing-directory "~/public_html"
+         :recursive t
+         :publishing-function org-html-publish-to-html
+         :headline-levels 6
+         :auto-preamble t)
+        ("org-static"
+         :base-directory"~/org"
+         :base-extension "css\\|js\\|png\\|jpeg\\|gif\\|pdf\\|mp3\\|oog\\|swf)"
+         :publishing-directory "~/public_html"
+         :recursive t
+         :publishing-function org-publish-attachment)
+        ("org"
+         :components ("org-notes" "org-static"))
+        ))
 
 ;; load some tex processing
 (load "auctex.el" nil t t)
@@ -188,7 +213,7 @@
     (if (get-process "ftp")
         (kill-process (get-process "ftp")))
     (let (
-          (p (start-process "ftp" "*ftp transfer*" "ftp" "-n" "192.168.1.100"))
+          (p (start-process "ftp" "*ftp transfer*" "ftp" "-n" "192.168.1.101"))
           (done 'false))
       (set-process-filter p (lambda (proc str)
                               (if (string-match "Done." str)
@@ -207,15 +232,51 @@
 (setq-default indent-tabs-mode nil)
 
 ;; ethereum stuff
-(setq solidity-solc-path "/usr/bin/solcjs")
+;;(setq solidity-solc-path "/usr/bin/solc")
+;;(setq flymake-solidity-executable "/usr/bin/solc")
 (require 'solidity-mode)
 (require 'flymake-solidity)
 
+;; typescript
+(defun setup-tide-mode()
+  (interactive)
+  (tide-setup)
+  (flycheck-mode +1)
+  (setq flycheck-check-syntax-automatically '(save mode-enabled))
+  (eldoc-mode +1)
+  (tide-hl-identifier-mode +1)
+  (company-mode +1))
 
+(setq conpany-tooltip-align-annotations t)
+(add-hook 'before-save-hook 'tide-format-before-save)
+(add-hook 'typescript-mode-hook #'setup-tide-mode)
+
+
+;; ledger
+(require 'ledger-mode)
+(setq ledger-mode-should-check-version nil
+      ledger-report-links-in-register nil
+      ledger-binary-path "hledger")
+(add-to-list 'auto-mode-alist '("\\.ledger$" . ledger-mode))
 
 (define-key function-key-map (kbd "C-<f10>") (kbd "<f10>"))
 
 (desktop-save-mode 1)
+
+;; org-mode babel
+
+(org-babel-do-load-languages
+ 'org-babel-load-languages
+ '((emacs-lisp . t)
+   (sh . t)
+   (latex . t)))
+
+;; (eval-after-load "preview"
+;;   '(add-to-list 'preview-default-preamble "\\PreviewEnvironment{tikzpicture}" t))
+(add-to-list 'org-latex-packages-alist
+             '("" "tikz" t)
+             '("" "pgf-umlsd" t))
+(setq org-latex-create-formula-image-program 'imagemagick)
 
 ;; Cusomize look and feel
 (add-to-list 'default-frame-alist '(alpha 95 90))
@@ -232,7 +293,10 @@
  '(custom-enabled-themes (quote (tango-dark)))
  '(custom-safe-themes
    (quote
-    ("28ec8ccf6190f6a73812df9bc91df54ce1d6132f18b4c8fcc85d45298569eb53" "38ba6a938d67a452aeb1dada9d7cdeca4d9f18114e9fc8ed2b972573138d4664" "fc0c179ce77997ecb6a7833310587131f319006ef2f630c5a1fec1a9307bff45" default))))
+    ("28ec8ccf6190f6a73812df9bc91df54ce1d6132f18b4c8fcc85d45298569eb53" "38ba6a938d67a452aeb1dada9d7cdeca4d9f18114e9fc8ed2b972573138d4664" "fc0c179ce77997ecb6a7833310587131f319006ef2f630c5a1fec1a9307bff45" default)))
+ '(package-selected-packages
+   (quote
+    (flycheck-ledger ledger-mode coffee-mode graphviz-dot-mode tide typescript-mode go-mode yaml-mode plantuml-mode web-mode csv-mode haskell-mode auctex org-bullets json-mode cython-mode relative-line-numbers jedi python-mode magit yasnippet org-journal mellow-theme flycheck evil dts-mode autopair auto-complete))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
