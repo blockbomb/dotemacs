@@ -12,7 +12,7 @@
   (add-to-list 'package-archives
 	       '("gnu" . "http://epla.gnu.org/packages/")))
 (setq url-proxy-services '(("http" . "usncwsa.diebold.com:8080")
-			   ("https" . "usncwsa.diebold.com:8080")))
+ 			   ("https" . "usncwsa.diebold.com:8080")))
 
 ;; Auto load packages thatnn are missing
 (defvar autoload-packages
@@ -39,6 +39,8 @@
     go-mode
     tide
     company
+    powerline
+    htmlize
     )
   "A list of packages to ensure are installed at launch.")
 
@@ -141,10 +143,10 @@
 (add-to-list 'auto-mode-alist '("\\.py\\'" . python-mode))
 (add-to-list 'interpreter-mode-alist '("python". python-mode))
 
-(require 'jedi)
-(add-hook 'python-mode-hook 'jedi:setup)
-(setq jedi:complete-on-dot t)
-(setq python-shell-interpreter "/usr/bin/python3")
+;; (require 'jedi)
+;; (add-hook 'python-mode-hook 'jedi:setup)
+;; (setq jedi:complete-on-dot t)
+;; (setq python-shell-interpreter "/usr/bin/python3")
 
 ;; C-Programming Section
 (setq-default c-basic-offset 4
@@ -152,12 +154,16 @@
 
 ;; Notes N' dat
 (require 'org)
+(require 'org-journal)
+
 (setq org-journal-dir "~/org/journal")
 (setq org-agenda-file-regexp "\\`.*\\.org\\'\\|\\`[0-9]+\\'")
-(setq org-agenda-files '("~/org" "~/org/journal"))
+(setq org-agenda-files `(
+                         ,org-directory
+                         ;; ,(concat org-directory "/journal")
+                         ,(concat org-directory "/gtd")))
 (setq org-journal-file-format "%Y%m%d.org")
 
-(require 'org-journal)
 (define-key global-map "\C-cl" 'org-store-link)
 (define-key global-map "\C-ca" 'org-agenda)
 (setq org-agenda-include-diary t)
@@ -168,6 +174,7 @@
 (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1)))
 
 (require 'ox-publish)
+(require 'ox-html)
 (setq org-publish-project-alist
       '(
         ("org-notes"
@@ -178,15 +185,97 @@
          :publishing-function org-html-publish-to-html
          :headline-levels 6
          :auto-preamble t)
-        ("org-static"
+         ("org-static"
          :base-directory"~/org"
          :base-extension "css\\|js\\|png\\|jpeg\\|gif\\|pdf\\|mp3\\|oog\\|swf)"
          :publishing-directory "~/public_html"
          :recursive t
          :publishing-function org-publish-attachment)
+        ("directconnect-notes"
+         :base-directory "~/org"
+         :base-extension ""
+         :exclude "*\\.org"
+         :publishing-directory "~/directconnect_html"
+         :include ("GeneralPurposeConnectionToTerminal.org")
+         :recursive t
+         :publishing-function org-html-publish-to-html)
+        ("directconnect-static"
+         :base-directory"~/org"
+         :base-extension "css\\|js\\|png\\|jpeg\\|gif\\|pdf\\|mp3\\|oog\\|swf)"
+         :publishing-directory "~/directconnect_html"
+         :recursive t
+         :publishing-function org-publish-attachment)
         ("org"
          :components ("org-notes" "org-static"))
+        ("directconnect"
+         :components ("directconnect-notes" "directconnect-static"))
         ))
+
+(setq org-capture-templates `(
+                              ("t" "Todo [inbox)]" entry
+                               (file+headline ,(concat org-directory "/gtd/inbox.org") "Tasks")
+                               "* TODO %i%? %^g")
+                              ( "T" "Tickler" entry
+                                (file+headline ,(concat org-directory  "/gtd/tickler.org") "Tickler")
+                                "* %i%? \n %^t\n %U")
+                              ( "j" "Journal" entry
+                                (file+olp+datetree ,(concat org-directory "/journal.org")) "* %? %^g\nEntered on %U\n\n%i\n%a")))
+
+(setq org-refile-targets `((,(concat org-directory "/gtd/gtd.org") :maxlevel . 3)
+                           (,(concat org-directory "/gtd/someday.org") :level . 1)
+                           (,(concat org-directory "/gtd/tickler.org") :maxlevel . 2)))
+(setq org-todo-keywords '((sequence "TODO(t)" "WAITING(w)" "|" "DONE(d)" "CANCELLED(c)")))
+(setq org-tag-alist '(("@computer" . ?c)
+                           ("@windows" . ?w)
+                           ("@android" . ?a)
+                           ("@iphone" . ?i)
+                           ("@email" .  ?e)))
+(setq org-use-fast-tag-selection t)
+
+(setq org-agenda-custom-commands
+      '(("o" "At the office" tags-todo "@computer"
+         ((org-agenda-overriding-header "Computer")
+          (org-agenda-skip-function 'my-org-agenda-skip-all-siblings-but-first)))
+        ("n" "Next Actions"
+         ((tags-todo "@computer"
+                     ((org-agenda-overriding-header "Computer")
+                      (org-agenda-skip-function 'my-org-agenda-skip-all-siblings-but-first)))
+          (tags-todo "@windows"
+                     ((org-agenda-overriding-header "Windows")
+                      (org-agenda-skip-function 'my-org-agenda-skip-all-siblings-but-first)))
+          (tags-todo "@android"
+                     ((org-agenda-overriding-header "Android")
+                      (org-agenda-skip-function 'my-org-agenda-skip-all-siblings-but-first)))
+          (tags-todo "@iphone"
+                     ((org-agenda-overriding-header "Iphone")
+                      (org-agenda-skip-function 'my-org-agenda-skip-all-siblings-but-first)))
+          (tags-todo "@email"
+                     ((org-agenda-overriding-header "Email")
+                      (org-agenda-skip-function 'my-org-agenda-skip-all-siblings-but-first)))))
+        ("D" "Daily Action List"
+         ((agenda "" ((org-agenda-ndays 1)
+                      (org-agenda-sorting-strategy (quote  ((agenda time-up priority-down tag-up))))
+                      (org-deadline-warning-days 0)))))
+        ))
+(defun my-org-agenda-skip-all-siblings-but-first ()
+  "Skip all but the first non-done entry."
+  (let (should-skip-entry)
+    (unless (org-current-is-todo)
+      (setq should-skip-entry t))
+    (save-excursion
+      (while (and (not should-skip-entry) (org-goto-sibling t))
+        (when (org-current-is-todo)
+          (setq should-skip-entry t))))
+    (when should-skip-entry
+      (or (outline-next-heading)
+          (goto-char (point-max))))))
+
+
+(defun org-current-is-todo ()
+  (string= "TODO" (org-get-todo-state)))
+
+(define-key global-map "\C-cc" 'org-capture)
+
 
 ;; load some tex processing
 (load "auctex.el" nil t t)
@@ -251,6 +340,8 @@
 (add-hook 'before-save-hook 'tide-format-before-save)
 (add-hook 'typescript-mode-hook #'setup-tide-mode)
 
+;; powerline
+(require 'powerline)
 
 ;; ledger
 (require 'ledger-mode)
@@ -268,7 +359,7 @@
 (org-babel-do-load-languages
  'org-babel-load-languages
  '((emacs-lisp . t)
-   (sh . t)
+   (shell . t)
    (latex . t)))
 
 ;; (eval-after-load "preview"
@@ -282,6 +373,17 @@
 (add-to-list 'default-frame-alist '(alpha 95 90))
 (tool-bar-mode -1)
 
+;; insert date function from shell
+(require 'calendar)
+(defun insdate-insert-current-date (&optional omit-day-of-week-p)
+    "Insert today's date using the current locale.
+  With a prefix argument, the date is inserted without the day of
+  the week."
+    (interactive "P*")
+    (insert (calendar-date-string (calendar-current-date) nil
+				  omit-day-of-week-p)))
+(global-set-key "\C-x\M-d" `insdate-insert-current-date)
+
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -294,9 +396,12 @@
  '(custom-safe-themes
    (quote
     ("28ec8ccf6190f6a73812df9bc91df54ce1d6132f18b4c8fcc85d45298569eb53" "38ba6a938d67a452aeb1dada9d7cdeca4d9f18114e9fc8ed2b972573138d4664" "fc0c179ce77997ecb6a7833310587131f319006ef2f630c5a1fec1a9307bff45" default)))
+ '(org-agenda-files
+   (quote
+    ("/home/blockb/org/beagleboneblack.org" "/home/blockb/org/blocklocker.org" "/home/blockb/org/chipmunk.org" "/home/blockb/org/work.org" "/home/blockb/org/gtd/gtd.org" "/home/blockb/org/gtd/inbox.org" "/home/blockb/org/gtd/someday.org" "/home/blockb/org/gtd/tickler.org")))
  '(package-selected-packages
    (quote
-    (flycheck-ledger ledger-mode coffee-mode graphviz-dot-mode tide typescript-mode go-mode yaml-mode plantuml-mode web-mode csv-mode haskell-mode auctex org-bullets json-mode cython-mode relative-line-numbers jedi python-mode magit yasnippet org-journal mellow-theme flycheck evil dts-mode autopair auto-complete))))
+    (tup-mode clojure-mode htmlize pandoc-mode kotlin-mode dockerfile-mode powerline markdown-mode flycheck-ledger ledger-mode coffee-mode graphviz-dot-mode tide typescript-mode go-mode yaml-mode plantuml-mode web-mode csv-mode haskell-mode auctex org-bullets json-mode cython-mode relative-line-numbers jedi python-mode magit yasnippet org-journal mellow-theme flycheck evil dts-mode autopair auto-complete))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
